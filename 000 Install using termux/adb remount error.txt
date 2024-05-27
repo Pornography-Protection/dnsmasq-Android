@@ -1,7 +1,0 @@
-$ adb remount
-# produces:
-Overlayfs setup for /vendor/dsp failed, skipping: No such device or address
-remount failed
-# solution
-adb shell su -c "mount -o rw,remount,rw /"
-

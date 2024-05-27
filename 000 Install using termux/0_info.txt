@@ -2,93 +2,58 @@
 https://www.reddit.com/r/LineageOS/comments/1colskw/comment/l3eu2k6/?rdt=36839
 https://android.stackexchange.com/questions/256989/how-to-redirect-dns-traffic-to-dnsmasq-on-android
 
+// Solve adb remount error:
+`adb remount`
+# produces:
+```Overlayfs setup for /vendor/dsp failed, skipping: No such device or address
+remount failed```
+# solution
+`adb shell su -c "mount -o rw,remount,rw /"`
+
 // Install dnsmasq using termux:
 https://xdaforums.com/t/how-to-properly-start-dnsmasq-on-lineageos.4668014/
+https://xdaforums.com/t/tut-adblock-using-dnsmasq-root.3279186/
+https://github.com/ukanth/afwall/wiki/DNS#changing-default-dns # Note the [setprop net.dns1] instructions in this link no longer work on new Android systems
 https://github.com/termux/termux-packages/tree/master/root-packages/dnsmasq
-# Run:
+# To run:
 https://github.com/termux/termux-packages/issues/19830
+
 `pkg i root-repo && pkg up && pkg i dnsmasq`
 
-// Auto start it:
-cp /data/data/com.termux/files/usr/bin/dnsmasq /system/bin/
+# copy dnsmasq.conf (on pc) to /etc/dnsmasq.conf (on phone)
 
-// Configure:
-https://xdaforums.com/t/tut-adblock-using-dnsmasq-root.3279186/
-https://github.com/ukanth/afwall/wiki/DNS#changing-default-dns
+`cp /data/data/com.termux/files/usr/bin/dnsmasq /system/bin/`
 
-# Add to /etc/myboot.sh:
-# copy ./dnsmasq.conf to /etc/dnsmasq.conf (on phone)
-/system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-
+# Diver port 53 (DNS port): Replace -A with -D to undo
+```
+/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
+/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
+```
 
-// Default settings file?
-/data/local/tmp/dnsmasq.conf
+# 1. why <&- ? dnsmasq just keeps reading stdin for commands. <&- closes stdin to avoid high cpu usage
+# 2. --pid-file with no arguments looks like a nicer way of avoiding the need for a pid file.
 
-// TODO:
-The only problem to solve is to set the net.dns1 for mobile data. For wifi it can be done with a script /system/etc/dhcpcd/dhcpcd-hooks/21-dns.conf
+`/system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-`
 
-# Stop it:
+`logcat | grep dnsmasq`
+
 `killall dnsmasq`
 
-// Watch logs:
-logcat | grep dnsmasq
-
-
-
-### why <&- ? dnsmasq just keeps reading stdin for commands. <&- closes stdin to avoid high cpu usage
-
-### check for high cpu (should be 0%): top -n 1|grep dns
-### 1843 0% S 1 2992K 2456K fg root
-
-### 3) you need to set DNS manually: setprop net.dns1 127.0.0.1 (use for test)
-### BUT dhcpd will change net.dns1 again (net.dnschange goes +1)
-### Override DNS on WLAN0 and RMNET0:
-
-### 4) echo setprop dhcp.wlan0.dns1 127.0.0.1 >/system/etc/dhcpcd/dhcpcd-hooks/99-dnsmasq
-
-### 5) chmod 644 /system/etc/dhcpcd/dhcpcd-hooks/99-dnsmasq
-
-### *) Nothing found yet for mobile data dns on RMNET0 (netd does that?)
-### echo setprop net.rmnet0.dns1 127.0.0.1>>/system/etc/dhcpcd/dhcpcd-hooks/99-dnsmasq
-
-### ps: if your tether mobile data Android uses the netd and start:
 ### dnsmasq --no-daemon --no-resolv --no-poll --dhcp-option-force=43,ANDROID_METERED --dhcp-range=%s,%s,1h
 
-### if you trust the workings you can copy adblock.conf to /etc/dnsmasq.conf
-### add to your install-recovery.sh the line: dnsmasq <&-
-
-// Other:
---pid-file with no arguments looks like a nicer way of avoiding the need for a pid file.
-
-
-
-// New:
-# No longer work on newer Android versions:
-setprop net.dns1 127.0.0.1
-setprop net.dns2 127.0.0.1
-setprop dhcp.tiwlan0.dns1 127.0.0.1
-setprop dhcp.tiwlan0.dns2 127.0.0.1
-setprop net.ppp0.dns1 127.0.0.1
-setprop net.ppp0.dns2 127.0.0.1
-setprop net.rmnet0.dns1 127.0.0.1
-setprop net.rmnet0.dns2 127.0.0.1
-setprop net.pdpbr1.dns1 127.0.0.1
-setprop net.pdpbr1.dns2 127.0.0.1
-
-# Works but breaks network:
-/system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:53
-/system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:53
-
-# or:
+# This does not work:
 chown 999 /bin/dnsmasq
 /system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:53
 /system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:53
 
-# or:
-/data/data/com.termux/files/usr/bin/setpriv --reuid=999 --regid=999 --clear-groups /system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-
+# Nor this:
+`/data/data/com.termux/files/usr/bin/setpriv --reuid=999 --regid=999 --clear-groups /system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-`
+# Produces:
+`dnsmasq: failed to find list of interfaces: Permission denied`
+# using --init-groups gives:
+`setpriv: uid 999 not found, --init-groups requires an user that can be found on the system`
 
-logcat | grep dnsmasq
-
-# infinite loop:
+# Nor this: infinite loop:
 /system/bin/iptables -t nat -A OUTPUT -p tcp -j DNAT --to-destination 127.0.0.1:5353
 /system/bin/iptables -t nat -A OUTPUT -p udp -j DNAT --to-destination 127.0.0.1:5353
 
@@ -97,15 +62,5 @@ vim /system/etc/init/myboot.rc
     exec u:r:su:s0 root root -- /system/etc/myboot.sh
     exec u:r:su:s0 root root -- /system/bin/dnsmasq
 #? or add to script:
-/system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p tcp -j ACCEPT
-/system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p udp -j ACCEPT
-
-
-
-// New 2: (not working) 2024-05-08
-/system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-
-
-setpriv --reuid=999 --regid=999 --init-groups /bin/dnsmasq # no setpriv command on LineageOS
-
 /system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p tcp -j ACCEPT
 /system/bin/iptables -t nat -A OUTPUT -m owner --uid-owner 999 -p udp -j ACCEPT
