@@ -24,20 +24,32 @@ https://github.com/termux/termux-packages/issues/19830
 
 `cp /data/data/com.termux/files/usr/bin/dnsmasq /system/bin/`
 
-# Diver port 53 (DNS port): Replace -A with -D to undo
+# Diver port 53 (DNS port):
 ```
 /system/bin/iptables -t nat -A OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
 /system/bin/iptables -t nat -A OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
 ```
 
+# To undo the above:
+```
+/system/bin/iptables -t nat -D OUTPUT -p tcp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
+/system/bin/iptables -t nat -D OUTPUT -p udp --dport 53 -j DNAT --to-destination 127.0.0.1:5353
+```
+
 # 1. why <&- ? dnsmasq just keeps reading stdin for commands. <&- closes stdin to avoid high cpu usage
 # 2. --pid-file with no arguments looks like a nicer way of avoiding the need for a pid file.
 
-`/system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-`
+`
+/system/bin/dnsmasq --pid-file --conf-file=/etc/dnsmasq.conf <&-
+`
 
-`logcat | grep dnsmasq`
+`
+logcat | grep dnsmasq
+`
 
-`killall dnsmasq`
+`
+killall dnsmasq
+`
 
 ### dnsmasq --no-daemon --no-resolv --no-poll --dhcp-option-force=43,ANDROID_METERED --dhcp-range=%s,%s,1h
 
@@ -57,7 +69,7 @@ chown 999 /bin/dnsmasq
 /system/bin/iptables -t nat -A OUTPUT -p tcp -j DNAT --to-destination 127.0.0.1:5353
 /system/bin/iptables -t nat -A OUTPUT -p udp -j DNAT --to-destination 127.0.0.1:5353
 
-#?
+// ?
 vim /system/etc/init/myboot.rc
     exec u:r:su:s0 root root -- /system/etc/myboot.sh
     exec u:r:su:s0 root root -- /system/bin/dnsmasq
