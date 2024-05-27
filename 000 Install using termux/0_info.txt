@@ -1,6 +1,7 @@
 // Help:
 https://www.reddit.com/r/LineageOS/comments/1colskw/comment/l3eu2k6/?rdt=36839
 https://android.stackexchange.com/questions/256989/how-to-redirect-dns-traffic-to-dnsmasq-on-android
+https://lineageos.org/engineering/HowTo-SELinux/
 
 // Solve adb remount error:
 `adb remount`
