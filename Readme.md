@@ -85,3 +85,14 @@ adb shell '/data/local/tmp/dnsmasq --conf-file=/data/local/tmp/adblock.conf <&- 
 /system/bin/sh: /data/local/tmp/dnsmasq: not executable: 64-bit ELF file
 # Solution: (not tested yet)
 https://stackoverflow.com/questions/41644382/android-not-executable-64-bit-elf-file
+
+// Update: SELinux resources: (Learn more about SELinux) 2024-06-18
+https://www.codementor.io/u/dashboard/my-requests/juu4bljuj6?from=open
+https://android.stackexchange.com/questions/256989/how-to-redirect-dns-traffic-to-dnsmasq-on-android
+https://android.stackexchange.com/questions/207484/how-to-run-dnscrypt-as-a-background-service-on-android/207647#207647
+https://xdaforums.com/t/info-is-it-possible-to-install-windows-ios-or-linux-on-android-device.3763961/#post-77437874
+https://security.stackexchange.com/questions/277412/android-selinux-start-dnsmasq-on-startup
+https://arstechnica.com/gadgets/2018/07/googles-iron-grip-on-android-controlling-open-source-by-any-means-necessary/
+https://github.blog/2023-07-05-introduction-to-selinux/
+https://selinuxproject.org/page/NewUsers
+https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/using_selinux/getting-started-with-selinux_using-selinux
